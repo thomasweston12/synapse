@@ -32,6 +32,7 @@ from typing import (
     TypeVar,
     Union,
 )
+from urllib.parse import urlparse
 
 import attr
 from frozendict import frozendict
@@ -407,7 +408,7 @@ MU = TypeVar("MU", bound="MXCUri")
 class MXCUri:
     """Represents a URI that points to a media resource in matrix.
 
-    MXC's take the form 'mxc://server_name/media_id'.
+    MXC URIs take the form 'mxc://server_name/media_id'.
     """
 
     server_name: str
@@ -415,11 +416,52 @@ class MXCUri:
 
     @classmethod
     def from_str(cls: Type[MU], mxc_uri_str: str) -> MU:
-        try:
-            server_name, media_id = mxc_uri_str.split("/")[-2:]
-        except IndexError:
-            raise SynapseError(
-                400, f"Error processing malformed MXC uri: {mxc_uri_str}"
+        """
+        Given a str in the form "mxc://<domain>/<media_id>", return an equivalent MXCUri.
+
+        Args:
+            mxc_uri_str: The MXC Uri as a str.
+
+        Returns:
+            An MXCUri object with matching attributes.
+
+        Raises:
+            ValueError: If the str was not a valid MXC Uri.
+        """
+        # Attempt to parse the given URI. This will raise a ValueError if the uri is
+        # particularly malformed.
+        parsed_mxc_uri = urlparse(mxc_uri_str)
+
+        # MXC Uri's are pretty bare bones. The scheme must be "mxc", and we don't allow
+        # any fragments, query parameters or other features.
+        if (
+            # The scheme must be "mxc".
+            parsed_mxc_uri.scheme != "mxc"
+            # There must be a host and path provided.
+            or not parsed_mxc_uri.netloc
+            or not parsed_mxc_uri.path
+            or not parsed_mxc_uri.path.startswith("/")
+            or len(parsed_mxc_uri.path) <= 1
+            # There cannot be any fragments, queries or parameters.
+            or parsed_mxc_uri.fragment
+            or parsed_mxc_uri.query
+            or parsed_mxc_uri.params
+        ):
+            raise ValueError(
+                f"Found invalid structure when parsing MXC Uri: {mxc_uri_str}"
+            )
+
+        # We use the parsed 'network location' as the server name
+        server_name = parsed_mxc_uri.netloc
+
+        # urlparse adds a '/' to the beginning of the path, so let's remove that and use
+        # it as the media_id
+        media_id = parsed_mxc_uri.path[1:]
+
+        # The media ID should not contain a '/'
+        if "/" in media_id:
+            raise ValueError(
+                f"Found invalid character in media ID portion of MXC Uri: {mxc_uri_str}"
             )
 
         return cls(server_name, media_id)
