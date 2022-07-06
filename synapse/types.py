@@ -403,7 +403,7 @@ def map_username_to_mxid_localpart(
 MU = TypeVar("MU", bound="MXCUri")
 
 
-@attr.s(frozen=True, slots=True, auto_attribs=True, repr=False)
+@attr.s(frozen=True, slots=True, auto_attribs=True)
 class MXCUri:
     """Represents a URI that points to a media resource in matrix.
 
@@ -428,7 +428,7 @@ class MXCUri:
         """Convert an MXCUri object to a str."""
         return f"mxc://{self.server_name}/{self.media_id}"
 
-    __repr__ = to_string
+    __str__ = to_string
 
 
 @attr.s(frozen=True, slots=True, order=False)
