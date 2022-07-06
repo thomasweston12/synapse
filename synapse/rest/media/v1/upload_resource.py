@@ -103,4 +103,6 @@ class UploadResource(DirectServeJsonResource):
 
         logger.info("Uploaded content with URI %r", content_uri)
 
-        respond_with_json(request, 200, {"content_uri": content_uri}, send_cors=True)
+        respond_with_json(
+            request, 200, {"content_uri": content_uri.to_string()}, send_cors=True
+        )
