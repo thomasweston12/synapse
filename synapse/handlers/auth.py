@@ -1535,6 +1535,7 @@ class AuthHandler:
             address = canonicalise_email(address)
 
         identity_handler = self.hs.get_identity_handler()
+
         result = await identity_handler.try_unbind_threepid(
             user_id, {"medium": medium, "address": address, "id_server": id_server}
         )
