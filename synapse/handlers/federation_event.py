@@ -1068,6 +1068,9 @@ class FederationEventHandler:
         # XXX: this doesn't sound right? it means that we'll end up with incomplete
         #   state.
         failed_to_fetch = desired_events - event_metadata.keys()
+        # Ignore `event_id`, because it's not included in `event_metadata`.
+        # We'll raise an exception above if it's still missing anyway.
+        failed_to_fetch.remove(event_id)
         if failed_to_fetch:
             logger.warning(
                 "Failed to fetch missing state events for %s %s",
